@@ -8,7 +8,7 @@
 	"banner": "banner.png",
 	"gameVersion": "Update 12+",
 	"requiredByAllPlayers": false,
-	"updateUrl": "https://www.raftmodding.com/api/v1/mods/YOUR-MOD-SLUG-HERE/version.txt",
+	"updateUrl": "https://www.raftmodding.com/api/v1/mods/minimap/version.txt",
 	"isModPermanent": false,
 	"excludedFiles": [],
 	"modSettings": [
