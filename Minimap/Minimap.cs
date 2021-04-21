@@ -21,6 +21,8 @@ namespace Whitebrim.Minimap
 
 		public const int MASK_LAYER = 1 << 18;
 		public const float MARKS_SCALE = 20;
+		public const float CAVE_MODE_CLIP_TOP = 1f;
+		public const float CAVE_MODE_CLIP_BOTTOM = 2f;
 		public static readonly Color PLAYER_COLOR = new Color(0x47 / 255f, 0xAB / 255f, 0x3C / 255f);
 		public static readonly Color ENEMY_COLOR = new Color(0xCC / 255f, 0x31 / 255f, 0x48 / 255f);
 		public static readonly Color NEUTRAL_COLOR = new Color(0xE0 / 255f, 0xA9 / 255f, 0x18 / 255f);
@@ -98,7 +100,6 @@ namespace Whitebrim.Minimap
 			SavePersistence();
 			UpdateMinimapPosition();
 			UpdateCameraNearClip();
-			UpdateCaveMode();
 			markersLastValue = persistence.markers;
 			if (RAPI.IsCurrentSceneGame())
 			{
@@ -172,8 +173,8 @@ namespace Whitebrim.Minimap
 				if (persistence.caveMode && camera != null)
 				{
 					var playerY = camera.transform.parent.position.y;
-					camera.nearClipPlane = 300 - (playerY + 2);
-					camera.farClipPlane = 300 + (-playerY + 2);
+					camera.nearClipPlane = 300 - (playerY + CAVE_MODE_CLIP_TOP);
+					camera.farClipPlane = 300 + (-playerY + CAVE_MODE_CLIP_BOTTOM);
 				}
 			}
 		}
@@ -454,6 +455,7 @@ namespace Whitebrim.Minimap
 			{
 				yield return new WaitForEndOfFrame();
 			}
+			UpdateCaveMode();
 			AddForgottenMarkers();
 		}
 
