@@ -2,10 +2,10 @@
 
 namespace Whitebrim.Minimap
 {
-	public class MinimapCameraMover : MonoBehaviour
+	public class MarkerMover : MonoBehaviour
 	{
 		public bool active = true;
-		public Vector3 minimapShift = new Vector3(0, 300, 0);
+		public Vector3 minimapShift { get { return new Vector3(0, Random.Range(-0.2f, 0.2f), 0); } }
 		private Quaternion defaultRotation = Quaternion.Euler(90, 0, 0);
 		private Transform parent;
 
@@ -24,7 +24,7 @@ namespace Whitebrim.Minimap
 			}
 			if (active)
 			{
-				transform.position = new Vector3(parent.position.x, staticMinimapShift.y, parent.position.z);
+				transform.position = parent.position + staticMinimapShift;
 				transform.rotation = defaultRotation * Quaternion.Euler(0, 0, -parent.transform.rotation.eulerAngles.y);
 			}
 		}

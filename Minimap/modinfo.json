@@ -67,6 +67,12 @@
 		},
 		{
 			"type": "checkbox",
+			"name": "markers",
+			"text": "Enable Minimap Markers",
+			"default": true
+		},
+		{
+			"type": "checkbox",
 			"name": "cavemode",
 			"text": "Cave Mode (Auto set near clip for closed spaces)",
 			"default": false

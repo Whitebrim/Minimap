@@ -3,7 +3,7 @@
 namespace Whitebrim.Minimap
 {
 	[Serializable]
-	class Persistence
+	public class Persistence
 	{
 		public string zoomMinimapOut = null;
 		public string zoomMinimapIn = null;
@@ -12,5 +12,6 @@ namespace Whitebrim.Minimap
 		public float nearClip = 200;
 		public int minimapPosition = 0;
 		public bool caveMode = false;
+		public bool markers = true;
 	}
 }

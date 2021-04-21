@@ -38,9 +38,11 @@
   <ItemGroup>
     <Compile Include="Extensions.cs" />
     <Compile Include="ExtraSettings.cs" />
+    <Compile Include="MarkerMover.cs" />
     <Compile Include="Minimap.cs" />
     <Compile Include="MinimapCameraMover.cs" />
     <Compile Include="MinimapRotator.cs" />
+    <Compile Include="Patches.cs" />
     <Compile Include="Persistence.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -1,4 +1,7 @@
-﻿using System.Collections;
+﻿using HarmonyLib;
+using System.Collections;
+using System.Collections.Generic;
+using System.Reflection;
 using TMPro;
 using UltimateWater;
 using UnityEngine;
@@ -8,24 +11,48 @@ namespace Whitebrim.Minimap
 {
 	public class Minimap : Mod
 	{
+		public enum MarkerType
+		{
+			ENEMY,
+			NEUTRAL,
+			PLAYER,
+			SHARK
+		}
+
+		public const int MASK_LAYER = 1 << 18;
+		public const float MARKS_SCALE = 20;
+		public static readonly Color PLAYER_COLOR = new Color(0x47 / 255f, 0xAB / 255f, 0x3C / 255f);
+		public static readonly Color ENEMY_COLOR = new Color(0xCC / 255f, 0x31 / 255f, 0x48 / 255f);
+		public static readonly Color NEUTRAL_COLOR = new Color(0xE0 / 255f, 0xA9 / 255f, 0x18 / 255f);
+		public static readonly Color SHARK_COLOR = new Color(0x26 / 255f, 0x79 / 255f, 0xCC / 255f);
+
 		public static Minimap Instance => (Minimap)modInstance;
 
 		// Extra Settings API
-		public static HarmonyLib.Traverse ExtraSettingsAPI_Traverse;
+		public static Traverse ExtraSettingsAPI_Traverse;
 		public static bool ExtraSettingsAPI_Loaded = false;
-		private Persistence persistence = new Persistence();
+		public Persistence persistence = new Persistence();
+
+		// Harmony
+		private Harmony harmonyInstance;
 
 		private AssetBundle asset;
 		private Camera camera;
 		private GameObject canvas;
+		private GameObject marker;
 		private TextMeshProUGUI zoomText;
+		private List<GameObject> markers = new List<GameObject>();
 
 		private bool allowedToDrag = false;
+		private bool markersLastValue;
+		private bool loaded = false;
 
 		#region Load
 
 		public void Awake()
 		{
+			harmonyInstance = new Harmony("com.whitebrim.minimap");
+			harmonyInstance.PatchAll(Assembly.GetExecutingAssembly());
 			PatchAllCameras();
 			StartCoroutine(LoadAssets());
 		}
@@ -35,12 +62,12 @@ namespace Whitebrim.Minimap
 			AssetBundleCreateRequest bundleRequest = AssetBundle.LoadFromMemoryAsync(GetEmbeddedFileBytes("minimap.assets"));
 			yield return bundleRequest;
 			asset = bundleRequest.assetBundle;
-
-			Debug.Log("Mod Minimap has been loaded!");
+			marker = asset.LoadAsset<GameObject>("Minimap Mark");
 			if (RAPI.IsCurrentSceneGame())
 			{
 				InstantiateAssets();
 			}
+			loaded = true;
 		}
 
 		private void InstantiateAssets()
@@ -56,6 +83,7 @@ namespace Whitebrim.Minimap
 			var script = canvas.AddComponent<MinimapRotator>();
 			script.Camera = camera.transform;
 			script.Compass = canvas.transform.FindChildRecursively("Compass") as RectTransform;
+			Debug.Log("Mod Minimap has been loaded!");
 		}
 
 		#endregion
@@ -67,13 +95,15 @@ namespace Whitebrim.Minimap
 			persistence.zoomMinimapIn = ExtraSettings.GetKeybindName("zoomminimapin");
 			persistence.zoomMinimapOut = ExtraSettings.GetKeybindName("zoomminimapout");
 			persistence.minimapDrag = ExtraSettings.GetKeybindName("minimapdrag");
-			persistence.zoomSpeed = ExtraSettings.GetSliderValue("zoomspeed");
-			persistence.nearClip = ExtraSettings.GetSliderValue("nearclip");
-			persistence.minimapPosition = ExtraSettings.GetComboboxSelectedIndex("position");
-			persistence.caveMode = ExtraSettings.GetCheckboxState("cavemode");
+			SavePersistence();
 			UpdateMinimapPosition();
 			UpdateCameraNearClip();
 			UpdateCaveMode();
+			markersLastValue = persistence.markers;
+			if (RAPI.IsCurrentSceneGame())
+			{
+				StartCoroutine(WaitForEndOfInitThenAddForgottenMarkers());
+			}
 		}
 
 		public void ExtraSettingsAPI_SettingsOpen()
@@ -81,18 +111,17 @@ namespace Whitebrim.Minimap
 			ExtraSettings.SetSliderValue("zoomspeed", persistence.zoomSpeed);
 			ExtraSettings.SetSliderValue("nearclip", persistence.nearClip);
 			ExtraSettings.SetComboboxSelectedIndex("position", persistence.minimapPosition);
+			ExtraSettings.SetCheckboxState("markers", persistence.markers);
 			ExtraSettings.SetCheckboxState("cavemode", persistence.caveMode);
 		}
 
 		public void ExtraSettingsAPI_SettingsClose()
 		{
-			persistence.zoomSpeed = ExtraSettings.GetSliderValue("zoomspeed");
-			persistence.nearClip = ExtraSettings.GetSliderValue("nearclip");
-			persistence.minimapPosition = ExtraSettings.GetComboboxSelectedIndex("position");
-			persistence.caveMode = ExtraSettings.GetCheckboxState("cavemode");
+			SavePersistence();
 			UpdateMinimapPosition();
 			UpdateCameraNearClip();
 			UpdateCaveMode();
+			UpdateMarkers();
 		}
 
 		public override void WorldEvent_WorldLoaded()
@@ -143,8 +172,8 @@ namespace Whitebrim.Minimap
 				if (persistence.caveMode && camera != null)
 				{
 					var playerY = camera.transform.parent.position.y;
-					camera.nearClipPlane = 300 - (playerY + 3);
-					camera.farClipPlane = 300 + (-playerY + 3);
+					camera.nearClipPlane = 300 - (playerY + 2);
+					camera.farClipPlane = 300 + (-playerY + 2);
 				}
 			}
 		}
@@ -154,6 +183,7 @@ namespace Whitebrim.Minimap
 		#region Unload
 		public void OnModUnload()
 		{
+			harmonyInstance.UnpatchAll();
 			if (camera != null)
 			{
 				camera.targetTexture = null;
@@ -164,6 +194,8 @@ namespace Whitebrim.Minimap
 				Destroy(canvas);
 			}
 			asset.Unload(true);
+			markers.ForEach((m) => Destroy(m));
+			PatchAllCameras(false);
 			Debug.Log("Mod Minimap has been unloaded!");
 		}
 
@@ -206,12 +238,21 @@ namespace Whitebrim.Minimap
 		{
 			System.Type type = original.GetType();
 			Component copy = destination.AddComponent(type);
-			System.Reflection.FieldInfo[] fields = type.GetFields();
-			foreach (System.Reflection.FieldInfo field in fields)
+			FieldInfo[] fields = type.GetFields();
+			foreach (FieldInfo field in fields)
 			{
 				field.SetValue(copy, field.GetValue(original));
 			}
 			return copy as T;
+		}
+
+		private void SavePersistence()
+		{
+			persistence.zoomSpeed = ExtraSettings.GetSliderValue("zoomspeed");
+			persistence.nearClip = ExtraSettings.GetSliderValue("nearclip");
+			persistence.minimapPosition = ExtraSettings.GetComboboxSelectedIndex("position");
+			persistence.markers = ExtraSettings.GetCheckboxState("markers");
+			persistence.caveMode = ExtraSettings.GetCheckboxState("cavemode");
 		}
 
 		private static void ChangeZoom(float newZoom)
@@ -222,6 +263,16 @@ namespace Whitebrim.Minimap
 				Instance.camera.farClipPlane = Mathf.Max(500, 300 + newZoom);
 			}
 			Instance.zoomText.text = newZoom.ToString("0.#") + "x";
+			for (int i = Instance.markers.Count - 1; i >= 0; i--)
+			{
+				if (Instance.markers[i] == null)
+				{
+					Instance.markers.RemoveAt(i);
+					continue;
+				}
+				float scale = (newZoom / MARKS_SCALE) / Instance.markers[i].transform.parent.localScale.x;
+				Instance.markers[i].transform.localScale = new Vector3(scale, scale, 0);
+			}
 		}
 
 		private static float ZoomFunction(float zoom)
@@ -275,6 +326,22 @@ namespace Whitebrim.Minimap
 			}
 		}
 
+		private void UpdateMarkers()
+		{
+			if (RAPI.IsCurrentSceneGame() && persistence.markers != markersLastValue)
+			{
+				if (persistence.markers)
+				{
+					AddForgottenMarkers();
+				}
+				else
+				{
+					markers.ForEach((m) => Destroy(m));
+				}
+			}
+			markersLastValue = persistence.markers;
+		}
+
 		private void InitMinimapDrag(bool drag)
 		{
 			if (RAPI.IsCurrentSceneGame())
@@ -295,16 +362,99 @@ namespace Whitebrim.Minimap
 			}
 		}
 
-		private void PatchAllCameras()
+		private void PatchAllCameras(bool remove = true)
 		{
 			var cameras = FindObjectsOfType<Camera>();
 			foreach (var c in cameras)
 			{
 				if (c.name != "Minimap Camera")
 				{
-					c.cullingMask &= ~8;
+					if (remove)
+					{
+						c.cullingMask &= ~MASK_LAYER;
+					}
+					else
+					{
+						c.cullingMask |= MASK_LAYER;
+					}
 				}
 			}
+		}
+
+		public static void AddMarker(Transform target, MarkerType markerType)
+		{
+			float scale = ((Instance.camera != null ? Instance.camera.orthographicSize : 15) / MARKS_SCALE) / target.localScale.x;
+			var newMarker = Instantiate(Instance.marker, target);
+			newMarker.AddComponent<MarkerMover>();
+			Instance.markers.Add(newMarker);
+			switch (markerType)
+			{
+				default:
+				case MarkerType.ENEMY:
+					newMarker.GetComponent<SpriteRenderer>().color = ENEMY_COLOR;
+					break;
+				case MarkerType.NEUTRAL:
+					newMarker.GetComponent<SpriteRenderer>().color = NEUTRAL_COLOR;
+					break;
+				case MarkerType.PLAYER:
+					newMarker.GetComponent<SpriteRenderer>().color = PLAYER_COLOR;
+					break;
+				case MarkerType.SHARK:
+					newMarker.GetComponent<SpriteRenderer>().color = SHARK_COLOR;
+					break;
+			}
+			newMarker.transform.localScale = new Vector3(scale, scale, 0);
+		}
+
+		private void AddForgottenMarkers()
+		{
+			if (RAPI.IsCurrentSceneGame() && persistence.markers)
+			{
+				var animals = FindObjectsOfType<AI_NetworkBehaviour_Animal>();
+				foreach (var entity in animals)
+				{
+					if (entity is AI_NetworkBehavior_Shark)
+					{
+						AddMarker(entity.transform, MarkerType.SHARK);
+					}
+					if (entity is AI_NetworkBehaviour_Bear ||
+						entity is AI_NetworkBehaviour_Boar ||
+						entity is AI_NetworkBehaviour_ButlerBot ||
+						entity is AI_NetworkBehaviour_MamaBear ||
+						entity is AI_NetworkBehaviour_Pig ||
+						entity is AI_NetworkBehaviour_PufferFish ||
+						entity is AI_NetworkBehaviour_Rat ||
+						entity is AI_NetworkBehaviour_StoneBird)
+					{
+						AddMarker(entity.transform, MarkerType.ENEMY);
+					}
+					if (entity is AI_NetworkBehaviour_BugSwarm ||
+						entity is AI_NetworkBehaviour_Chicken ||
+						entity is AI_NetworkBehaviour_Goat ||
+						entity is AI_NetworkBehaviour_Llama)
+					{
+						AddMarker(entity.transform, MarkerType.NEUTRAL);
+					}
+				}
+				var players = FindObjectsOfType<Network_Player>();
+				var me = RAPI.GetLocalPlayer();
+				foreach (var player in players)
+				{
+					if (player != me)
+					{
+						AddMarker(player.transform, MarkerType.PLAYER);
+					}
+				}
+			}
+		}
+
+		private IEnumerator WaitForEndOfInitThenAddForgottenMarkers()
+		{
+			while (!loaded)
+			{
+				yield return new WaitForEndOfFrame();
+			}
+			AddForgottenMarkers();
 		}
 
 		#endregion
