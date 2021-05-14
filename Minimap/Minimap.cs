@@ -28,7 +28,7 @@ namespace Whitebrim.Minimap
 		public static readonly Color NEUTRAL_COLOR = new Color(0xE0 / 255f, 0xA9 / 255f, 0x18 / 255f);
 		public static readonly Color SHARK_COLOR = new Color(0x26 / 255f, 0x79 / 255f, 0xCC / 255f);
 
-		public static Minimap Instance => (Minimap)modInstance;
+		public static Minimap Instance;
 
 		// Extra Settings API
 		public static Traverse ExtraSettingsAPI_Traverse;
@@ -53,6 +53,7 @@ namespace Whitebrim.Minimap
 
 		public void Awake()
 		{
+			Instance = this;
 			harmonyInstance = new Harmony("com.whitebrim.minimap");
 			harmonyInstance.PatchAll(Assembly.GetExecutingAssembly());
 			PatchAllCameras();
@@ -67,13 +68,17 @@ namespace Whitebrim.Minimap
 			marker = asset.LoadAsset<GameObject>("Minimap Mark");
 			if (RAPI.IsCurrentSceneGame())
 			{
-				InstantiateAssets();
+				yield return StartCoroutine(InstantiateAssets());
 			}
 			loaded = true;
 		}
 
-		private void InstantiateAssets()
+		private IEnumerator InstantiateAssets()
 		{
+			while (RAPI.GetLocalPlayer() == null)
+			{
+				yield return new WaitForEndOfFrame();
+			}
 			var cameraPrefab = asset.LoadAsset<GameObject>("Minimap Camera");
 			camera = Instantiate(cameraPrefab, RAPI.GetLocalPlayer().transform).GetComponent<Camera>();
 			CopyComponent(Camera.main.GetComponent<WaterCamera>(), camera.gameObject);
@@ -127,11 +132,7 @@ namespace Whitebrim.Minimap
 
 		public override void WorldEvent_WorldLoaded()
 		{
-			PatchAllCameras();
-			InstantiateAssets();
-			UpdateMinimapPosition();
-			UpdateCameraNearClip();
-			UpdateCaveMode();
+			StartCoroutine(WorldLoadedCoroutine());
 		}
 
 		public void ExtraSettingsAPI_ButtonPress(string name)
@@ -148,7 +149,7 @@ namespace Whitebrim.Minimap
 
 		public void Update()
 		{
-			if (ExtraSettingsAPI_Loaded)
+			if (ExtraSettingsAPI_Loaded && camera != null)
 			{
 				if (persistence.zoomMinimapIn != null && MyInput.GetButton(persistence.zoomMinimapIn))
 				{
@@ -459,6 +460,14 @@ namespace Whitebrim.Minimap
 			AddForgottenMarkers();
 		}
 
+		private IEnumerator WorldLoadedCoroutine()
+		{
+			PatchAllCameras();
+			yield return StartCoroutine(InstantiateAssets());
+			UpdateMinimapPosition();
+			UpdateCameraNearClip();
+			UpdateCaveMode();
+		}
 		#endregion
 	}
 }
