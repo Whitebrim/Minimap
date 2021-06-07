@@ -1,11 +1,11 @@
 ﻿using HarmonyLib;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using TMPro;
 using UltimateWater;
 using UnityEngine;
-
 
 namespace Whitebrim.Minimap
 {
@@ -32,11 +32,16 @@ namespace Whitebrim.Minimap
 
 		// Extra Settings API
 		public static Traverse ExtraSettingsAPI_Traverse;
+
 		public static bool ExtraSettingsAPI_Loaded = false;
 		public Persistence persistence = new Persistence();
 
 		// Harmony
 		private Harmony harmonyInstance;
+
+		private Canvas[] canvases;
+		private Traverse<Canvas[]> traverse;
+		private int originalSize = -1;
 
 		private AssetBundle asset;
 		private Camera camera;
@@ -86,6 +91,15 @@ namespace Whitebrim.Minimap
 			camera.gameObject.AddComponent<MinimapCameraMover>();
 			var canvasPrefab = asset.LoadAsset<GameObject>("_MinimapCanvas");
 			canvas = Instantiate(canvasPrefab, GameObject.Find("Canvases").transform);
+			traverse = Traverse.Create(GameObject.Find("_CanvasGame_New").GetComponent<CanvasHelper>()).Field<Canvas[]>("canvases");
+			canvases = traverse.Value;
+			if (originalSize == -1)
+			{
+				originalSize = canvases.Length;
+			}
+			Array.Resize(ref canvases, originalSize + 1);
+			canvases[canvases.Length - 1] = canvas.GetComponent<Canvas>();
+			traverse.Value = canvases;
 			zoomText = canvas.transform.FindChildRecursively("ZoomText").GetComponent<TextMeshProUGUI>();
 			var script = canvas.AddComponent<MinimapRotator>();
 			script.Camera = camera.transform;
@@ -93,7 +107,7 @@ namespace Whitebrim.Minimap
 			Debug.Log("Mod Minimap has been loaded!");
 		}
 
-		#endregion
+		#endregion Load
 
 		#region Events
 
@@ -143,7 +157,7 @@ namespace Whitebrim.Minimap
 			}
 		}
 
-		#endregion
+		#endregion Events
 
 		#region Update
 
@@ -180,9 +194,10 @@ namespace Whitebrim.Minimap
 			}
 		}
 
-		#endregion
+		#endregion Update
 
 		#region Unload
+
 		public void OnModUnload()
 		{
 			harmonyInstance.UnpatchAll();
@@ -197,11 +212,13 @@ namespace Whitebrim.Minimap
 			}
 			asset.Unload(true);
 			markers.ForEach((m) => Destroy(m));
+			Array.Resize(ref canvases, originalSize);
+			traverse.Value = canvases;
 			PatchAllCameras(false);
 			Debug.Log("Mod Minimap has been unloaded!");
 		}
 
-		#endregion
+		#endregion Unload
 
 		#region Commands
 
@@ -232,7 +249,7 @@ namespace Whitebrim.Minimap
 			}
 		}
 
-		#endregion
+		#endregion Commands
 
 		#region Misc
 
@@ -304,6 +321,7 @@ namespace Whitebrim.Minimap
 						rectTransform.pivot = new Vector2(0, 1);
 						rectTransform.anchoredPosition = new Vector2(40, -40);
 						break;
+
 					case 1:
 						rectTransform.anchorMin = new Vector2(1, 1);
 						rectTransform.anchorMax = new Vector2(1, 1);
@@ -395,12 +413,15 @@ namespace Whitebrim.Minimap
 				case MarkerType.ENEMY:
 					newMarker.GetComponent<SpriteRenderer>().color = ENEMY_COLOR;
 					break;
+
 				case MarkerType.NEUTRAL:
 					newMarker.GetComponent<SpriteRenderer>().color = NEUTRAL_COLOR;
 					break;
+
 				case MarkerType.PLAYER:
 					newMarker.GetComponent<SpriteRenderer>().color = PLAYER_COLOR;
 					break;
+
 				case MarkerType.SHARK:
 					newMarker.GetComponent<SpriteRenderer>().color = SHARK_COLOR;
 					break;
@@ -468,6 +489,7 @@ namespace Whitebrim.Minimap
 			UpdateCameraNearClip();
 			UpdateCaveMode();
 		}
-		#endregion
+
+		#endregion Misc
 	}
 }

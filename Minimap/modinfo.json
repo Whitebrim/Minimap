@@ -1,8 +1,8 @@
 {
 	"name": "Minimap",
 	"author": "Whitebrim",
-	"description": "For this mod to work properly, you need to install the \"Extra Settings API\" mod.\n\"Load this mod at startup\" not working.",
-	"version": "v1.0.2",
+	"description": "<b><size=120%>For this mod to work properly, you need to install the \"Extra Settings API\" mod.</size></b>\nZoom in/out by <b>+</b>/<b>-</b> keys.\nYou can drag minimap by holding <b>M</b> key.\nYou can find settings in Esc->Settings->Mod tab.",
+	"version": "v1.0.3",
 	"license": "GNU AGPLv3",
 	"icon": "icon.png",
 	"banner": "banner.png",
@@ -61,7 +61,7 @@
 			"default": 1,
 			"range": {
 				"type": "percent",
-				"min": 0.1,
+				"min": 0,
 				"max": 5
 			}
 		},
