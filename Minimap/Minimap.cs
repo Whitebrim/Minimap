@@ -75,6 +75,10 @@ namespace Whitebrim.Minimap
 			{
 				yield return StartCoroutine(InstantiateAssets());
 			}
+			else
+			{
+				Debug.Log("[<color=#DBBF63>Minimap</color>] will be loaded in game.");
+			}
 			loaded = true;
 		}
 
@@ -86,6 +90,7 @@ namespace Whitebrim.Minimap
 			}
 			var cameraPrefab = asset.LoadAsset<GameObject>("Minimap Camera");
 			camera = Instantiate(cameraPrefab, RAPI.GetLocalPlayer().transform).GetComponent<Camera>();
+			cameraPrefab.GetComponent<Camera>().targetTexture = null;
 			CopyComponent(Camera.main.GetComponent<WaterCamera>(), camera.gameObject);
 			CopyComponent(Camera.main.GetComponent<WaterCameraIME>(), camera.gameObject);
 			camera.gameObject.AddComponent<MinimapCameraMover>();
@@ -104,7 +109,7 @@ namespace Whitebrim.Minimap
 			var script = canvas.AddComponent<MinimapRotator>();
 			script.Camera = camera.transform;
 			script.Compass = canvas.transform.FindChildRecursively("Compass") as RectTransform;
-			Debug.Log("Mod Minimap has been loaded!");
+			Debug.Log("[<color=#DBBF63>Minimap</color>] has been loaded!");
 		}
 
 		#endregion Load
@@ -117,12 +122,11 @@ namespace Whitebrim.Minimap
 			persistence.zoomMinimapOut = ExtraSettings.GetKeybindName("zoomminimapout");
 			persistence.minimapDrag = ExtraSettings.GetKeybindName("minimapdrag");
 			SavePersistence();
-			UpdateMinimapPosition();
-			UpdateCameraNearClip();
+
 			markersLastValue = persistence.markers;
 			if (RAPI.IsCurrentSceneGame())
 			{
-				StartCoroutine(WaitForEndOfInitThenAddForgottenMarkers());
+				StartCoroutine(WaitForEndOfInitInGameScene());
 			}
 		}
 
@@ -131,6 +135,7 @@ namespace Whitebrim.Minimap
 			ExtraSettings.SetSliderValue("zoomspeed", persistence.zoomSpeed);
 			ExtraSettings.SetSliderValue("nearclip", persistence.nearClip);
 			ExtraSettings.SetComboboxSelectedIndex("position", persistence.minimapPosition);
+			ExtraSettings.SetComboboxSelectedIndex("renderquality", persistence.renderingQuality);
 			ExtraSettings.SetCheckboxState("markers", persistence.markers);
 			ExtraSettings.SetCheckboxState("cavemode", persistence.caveMode);
 		}
@@ -138,10 +143,15 @@ namespace Whitebrim.Minimap
 		public void ExtraSettingsAPI_SettingsClose()
 		{
 			SavePersistence();
-			UpdateMinimapPosition();
-			UpdateCameraNearClip();
-			UpdateCaveMode();
-			UpdateMarkers();
+
+			if (RAPI.IsCurrentSceneGame())
+			{
+				UpdateRenderSettings();
+				UpdateMinimapPosition();
+				UpdateCameraNearClip();
+				UpdateCaveMode();
+				UpdateMarkers();
+			}
 		}
 
 		public override void WorldEvent_WorldLoaded()
@@ -200,7 +210,7 @@ namespace Whitebrim.Minimap
 
 		public void OnModUnload()
 		{
-			harmonyInstance.UnpatchAll();
+			harmonyInstance.UnpatchAll("com.whitebrim.minimap");
 			if (camera != null)
 			{
 				camera.targetTexture = null;
@@ -212,10 +222,13 @@ namespace Whitebrim.Minimap
 			}
 			asset.Unload(true);
 			markers.ForEach((m) => Destroy(m));
-			Array.Resize(ref canvases, originalSize);
-			traverse.Value = canvases;
+			if (originalSize != -1)
+			{
+				Array.Resize(ref canvases, originalSize);
+				traverse.Value = canvases;
+			}
 			PatchAllCameras(false);
-			Debug.Log("Mod Minimap has been unloaded!");
+			Debug.Log("[<color=#DBBF63>Minimap</color>] has been unloaded!");
 		}
 
 		#endregion Unload
@@ -272,6 +285,7 @@ namespace Whitebrim.Minimap
 			persistence.minimapPosition = ExtraSettings.GetComboboxSelectedIndex("position");
 			persistence.markers = ExtraSettings.GetCheckboxState("markers");
 			persistence.caveMode = ExtraSettings.GetCheckboxState("cavemode");
+			persistence.renderingQuality = ExtraSettings.GetComboboxSelectedIndex("renderquality");
 		}
 
 		private static void ChangeZoom(float newZoom)
@@ -360,6 +374,20 @@ namespace Whitebrim.Minimap
 				}
 			}
 			markersLastValue = persistence.markers;
+		}
+
+		private void UpdateRenderSettings()
+		{
+			if (camera != null && ExtraSettingsAPI_Loaded)
+			{
+				var targetTexture = camera.targetTexture;
+				if (targetTexture.width != persistence.QualityDefinitions[persistence.renderingQuality])
+				{
+					targetTexture.Release();
+					targetTexture.width = targetTexture.height = persistence.QualityDefinitions[persistence.renderingQuality];
+					targetTexture.Create();
+				}
+			}
 		}
 
 		private void InitMinimapDrag(bool drag)
@@ -471,12 +499,15 @@ namespace Whitebrim.Minimap
 			}
 		}
 
-		private IEnumerator WaitForEndOfInitThenAddForgottenMarkers()
+		private IEnumerator WaitForEndOfInitInGameScene()
 		{
 			while (!loaded)
 			{
 				yield return new WaitForEndOfFrame();
 			}
+			UpdateMinimapPosition();
+			UpdateCameraNearClip();
+			UpdateRenderSettings();
 			UpdateCaveMode();
 			AddForgottenMarkers();
 		}
@@ -485,6 +516,7 @@ namespace Whitebrim.Minimap
 		{
 			PatchAllCameras();
 			yield return StartCoroutine(InstantiateAssets());
+			UpdateRenderSettings();
 			UpdateMinimapPosition();
 			UpdateCameraNearClip();
 			UpdateCaveMode();

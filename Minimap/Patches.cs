@@ -2,10 +2,10 @@
 
 namespace Whitebrim.Minimap
 {
-	class Patches
+	public class Patches
 	{
 		[HarmonyPatch(typeof(AI_NetworkBehaviour_Animal), "Awake")]
-		class Awake
+		private class Awake
 		{
 			private static void Postfix(AI_NetworkBehaviour_Animal __instance)
 			{
@@ -38,7 +38,7 @@ namespace Whitebrim.Minimap
 		}
 
 		[HarmonyPatch(typeof(Network_Player), "Start")]
-		class Start
+		private class Start
 		{
 			private static void Prefix(Network_Player __instance)
 			{

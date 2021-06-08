@@ -5,6 +5,8 @@ namespace Whitebrim.Minimap
 	[Serializable]
 	public class Persistence
 	{
+		public int[] QualityDefinitions = new[] { 64, 128, 192, 256, 384, 512 };
+
 		public string zoomMinimapOut = null;
 		public string zoomMinimapIn = null;
 		public string minimapDrag = null;
@@ -13,5 +15,6 @@ namespace Whitebrim.Minimap
 		public int minimapPosition = 0;
 		public bool caveMode = false;
 		public bool markers = true;
+		public int renderingQuality = 3;
 	}
 }
