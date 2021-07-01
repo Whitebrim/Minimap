@@ -1,4 +1,5 @@
 ﻿using HarmonyLib;
+using UnityEngine;
 
 namespace Whitebrim.Minimap
 {
@@ -15,7 +16,9 @@ namespace Whitebrim.Minimap
 					{
 						Minimap.AddMarker(__instance.transform, Minimap.MarkerType.SHARK);
 					}
-					if (__instance is AI_NetworkBehaviour_Bear ||
+					else
+					{
+						if (__instance is AI_NetworkBehaviour_Bear ||
 						__instance is AI_NetworkBehaviour_Boar ||
 						__instance is AI_NetworkBehaviour_ButlerBot ||
 						__instance is AI_NetworkBehaviour_MamaBear ||
@@ -23,15 +26,21 @@ namespace Whitebrim.Minimap
 						__instance is AI_NetworkBehaviour_PufferFish ||
 						__instance is AI_NetworkBehaviour_Rat ||
 						__instance is AI_NetworkBehaviour_StoneBird)
-					{
-						Minimap.AddMarker(__instance.transform, Minimap.MarkerType.ENEMY);
-					}
-					if (__instance is AI_NetworkBehaviour_BugSwarm ||
+						{
+							Minimap.AddMarker(__instance.transform, Minimap.MarkerType.ENEMY);
+						}
+						else
+						{
+							if (__instance is AI_NetworkBehaviour_BugSwarm ||
 						__instance is AI_NetworkBehaviour_Chicken ||
 						__instance is AI_NetworkBehaviour_Goat ||
-						__instance is AI_NetworkBehaviour_Llama)
-					{
-						Minimap.AddMarker(__instance.transform, Minimap.MarkerType.NEUTRAL);
+						__instance is AI_NetworkBehaviour_Llama ||
+						__instance is AI_NetworkBehaviour_Whale ||
+						__instance is AI_NetworkBehaviour_Animal)
+							{
+								Minimap.AddMarker(__instance.transform, Minimap.MarkerType.NEUTRAL);
+							}
+						}
 					}
 				}
 			}
