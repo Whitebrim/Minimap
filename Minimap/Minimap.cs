@@ -16,17 +16,19 @@ namespace Whitebrim.Minimap
 			ENEMY,
 			NEUTRAL,
 			PLAYER,
-			SHARK
+			SHARK,
+			NPC
 		}
 
 		public const int MASK_LAYER = 1 << 18;
 		public const float MARKS_SCALE = 20;
 		public const float CAVE_MODE_CLIP_TOP = 1f;
 		public const float CAVE_MODE_CLIP_BOTTOM = 2f;
-		public static readonly Color PLAYER_COLOR = new Color(0x47 / 255f, 0xAB / 255f, 0x3C / 255f);
-		public static readonly Color ENEMY_COLOR = new Color(0xCC / 255f, 0x31 / 255f, 0x48 / 255f);
-		public static readonly Color NEUTRAL_COLOR = new Color(0xE0 / 255f, 0xA9 / 255f, 0x18 / 255f);
-		public static readonly Color SHARK_COLOR = new Color(0x26 / 255f, 0x79 / 255f, 0xCC / 255f);
+		public static readonly Color PLAYER_COLOR = new Color(0x47 / 255f, 0xAB / 255f, 0x3C / 255f); // #47AB3C
+		public static readonly Color ENEMY_COLOR = new Color(0xCC / 255f, 0x31 / 255f, 0x48 / 255f); // #CC3148
+		public static readonly Color NEUTRAL_COLOR = new Color(0xE0 / 255f, 0xA9 / 255f, 0x18 / 255f); // #E0A918
+		public static readonly Color SHARK_COLOR = new Color(0x26 / 255f, 0x79 / 255f, 0xCC / 255f); // #2679CC
+		public static readonly Color NPC_COLOR = new Color(0xD7 / 255f, 0xB1 / 255f, 0xAB / 255f); // #D7B1AB
 
 		public static Minimap Instance;
 
@@ -91,7 +93,8 @@ namespace Whitebrim.Minimap
 			var cameraPrefab = asset.LoadAsset<GameObject>("Minimap Camera");
 			camera = Instantiate(cameraPrefab, RAPI.GetLocalPlayer().transform).GetComponent<Camera>();
 			cameraPrefab.GetComponent<Camera>().targetTexture = null;
-			CopyComponent(Camera.main.GetComponent<WaterCamera>(), camera.gameObject);
+			var waterCamera = CopyComponent(Camera.main.GetComponent<WaterCamera>(), camera.gameObject);
+			waterCamera.ReflectionCamera = null;
 			CopyComponent(Camera.main.GetComponent<WaterCameraIME>(), camera.gameObject);
 			camera.gameObject.AddComponent<MinimapCameraMover>();
 			var canvasPrefab = asset.LoadAsset<GameObject>("_MinimapCanvas");
@@ -138,6 +141,7 @@ namespace Whitebrim.Minimap
 			ExtraSettings.SetComboboxSelectedIndex("renderquality", persistence.renderingQuality);
 			ExtraSettings.SetCheckboxState("markers", persistence.markers);
 			ExtraSettings.SetCheckboxState("cavemode", persistence.caveMode);
+			ExtraSettings.SetInputValue("defaultzoom", persistence.defaultZoom.ToString());
 		}
 
 		public void ExtraSettingsAPI_SettingsClose()
@@ -151,6 +155,7 @@ namespace Whitebrim.Minimap
 				UpdateCameraNearClip();
 				UpdateCaveMode();
 				UpdateMarkers();
+				ChangeZoom(persistence.defaultZoom);
 			}
 		}
 
@@ -286,10 +291,13 @@ namespace Whitebrim.Minimap
 			persistence.markers = ExtraSettings.GetCheckboxState("markers");
 			persistence.caveMode = ExtraSettings.GetCheckboxState("cavemode");
 			persistence.renderingQuality = ExtraSettings.GetComboboxSelectedIndex("renderquality");
+			persistence.defaultZoom = Mathf.Max(1, float.Parse(ExtraSettings.GetInputValue("defaultzoom") is null ? "15" : ExtraSettings.GetInputValue("defaultzoom")));
 		}
 
 		private static void ChangeZoom(float newZoom)
 		{
+			if (Instance.camera is null) return;
+
 			Instance.camera.orthographicSize = newZoom;
 			if (!Instance.persistence.caveMode)
 			{
@@ -453,6 +461,9 @@ namespace Whitebrim.Minimap
 				case MarkerType.SHARK:
 					newMarker.GetComponent<SpriteRenderer>().color = SHARK_COLOR;
 					break;
+				case MarkerType.NPC:
+					newMarker.GetComponent<SpriteRenderer>().color = NPC_COLOR;
+					break;
 			}
 			newMarker.transform.localScale = new Vector3(scale, scale, 0);
 		}
@@ -464,25 +475,36 @@ namespace Whitebrim.Minimap
 				var animals = FindObjectsOfType<AI_NetworkBehaviour_Animal>();
 				foreach (var entity in animals)
 				{
-					if (entity is AI_NetworkBehavior_Shark)
+					if (entity is AI_NetworkBehavior_Shark ||
+						entity is AI_NetworkBehaviour_Dolphin ||
+						entity is AI_NetworkBehaviour_Whale)
 					{
 						AddMarker(entity.transform, MarkerType.SHARK);
 					}
-					if (entity is AI_NetworkBehaviour_Bear ||
+					else if (entity is AI_NetworkBehaviour_Bear ||
 						entity is AI_NetworkBehaviour_Boar ||
 						entity is AI_NetworkBehaviour_ButlerBot ||
 						entity is AI_NetworkBehaviour_MamaBear ||
 						entity is AI_NetworkBehaviour_Pig ||
 						entity is AI_NetworkBehaviour_PufferFish ||
 						entity is AI_NetworkBehaviour_Rat ||
-						entity is AI_NetworkBehaviour_StoneBird)
+						entity is AI_NetworkBehaviour_StoneBird ||
+						entity is AI_NetworkBehaviour_Boss_Varuna ||
+						entity is AI_NetworkBehaviour_PolarBear ||
+						entity is AI_NetworkBehaviour_Hyena ||
+						entity is AI_NetworkBehaviour_HyenaBoss)
 					{
 						AddMarker(entity.transform, MarkerType.ENEMY);
 					}
-					if (entity is AI_NetworkBehaviour_BugSwarm ||
+					else if (entity is AI_NetworkBehaviour_NPC)
+					{
+						AddMarker(entity.transform, MarkerType.NPC);
+					}
+					else if (entity is AI_NetworkBehaviour_BugSwarm ||
 						entity is AI_NetworkBehaviour_Chicken ||
 						entity is AI_NetworkBehaviour_Goat ||
-						entity is AI_NetworkBehaviour_Llama)
+						entity is AI_NetworkBehaviour_Llama ||
+						entity is AI_NetworkBehaviour_Animal)
 					{
 						AddMarker(entity.transform, MarkerType.NEUTRAL);
 					}
@@ -510,6 +532,7 @@ namespace Whitebrim.Minimap
 			UpdateRenderSettings();
 			UpdateCaveMode();
 			AddForgottenMarkers();
+			ChangeZoom(persistence.defaultZoom);
 		}
 
 		private IEnumerator WorldLoadedCoroutine()
@@ -520,6 +543,7 @@ namespace Whitebrim.Minimap
 			UpdateMinimapPosition();
 			UpdateCameraNearClip();
 			UpdateCaveMode();
+			ChangeZoom(persistence.defaultZoom);
 		}
 
 		#endregion Misc

@@ -78,6 +78,19 @@ namespace Whitebrim.Minimap
 			return 0;
 		}
 
+		public static string GetInputValue(string SettingName)
+		{
+			if (Minimap.ExtraSettingsAPI_Loaded)
+				return Minimap.ExtraSettingsAPI_Traverse.Method("getInputValue", new object[] { Minimap.Instance, SettingName }).GetValue<string>();
+			return "";
+		}
+
+		public static void SetInputValue(string SettingName, string value)
+		{
+			if (Minimap.ExtraSettingsAPI_Loaded)
+				Minimap.ExtraSettingsAPI_Traverse.Method("setInputValue", new object[] { Minimap.Instance, SettingName, value }).GetValue();
+		}
+
 		/// <summary>
 		/// Use to get the keybind name for a Keybind type setting
 		/// The returned name can be used with the MyInput functions to detect keypresses

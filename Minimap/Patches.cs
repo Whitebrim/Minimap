@@ -12,34 +12,41 @@ namespace Whitebrim.Minimap
 			{
 				if (Minimap.Instance.persistence.markers)
 				{
-					if (__instance is AI_NetworkBehavior_Shark)
+					if (__instance is AI_NetworkBehavior_Shark ||
+						__instance is AI_NetworkBehaviour_Dolphin ||
+						__instance is AI_NetworkBehaviour_Whale)
 					{
 						Minimap.AddMarker(__instance.transform, Minimap.MarkerType.SHARK);
 					}
 					else
 					{
 						if (__instance is AI_NetworkBehaviour_Bear ||
-						__instance is AI_NetworkBehaviour_Boar ||
-						__instance is AI_NetworkBehaviour_ButlerBot ||
-						__instance is AI_NetworkBehaviour_MamaBear ||
-						__instance is AI_NetworkBehaviour_Pig ||
-						__instance is AI_NetworkBehaviour_PufferFish ||
-						__instance is AI_NetworkBehaviour_Rat ||
-						__instance is AI_NetworkBehaviour_StoneBird)
+							__instance is AI_NetworkBehaviour_Boar ||
+							__instance is AI_NetworkBehaviour_ButlerBot ||
+							__instance is AI_NetworkBehaviour_MamaBear ||
+							__instance is AI_NetworkBehaviour_Pig ||
+							__instance is AI_NetworkBehaviour_PufferFish ||
+							__instance is AI_NetworkBehaviour_Rat ||
+							__instance is AI_NetworkBehaviour_StoneBird ||
+							__instance is AI_NetworkBehaviour_Boss_Varuna ||
+							__instance is AI_NetworkBehaviour_PolarBear ||
+							__instance is AI_NetworkBehaviour_Hyena ||
+							__instance is AI_NetworkBehaviour_HyenaBoss ||
+							__instance is AI_NetworkBehaviour_Roach)
 						{
 							Minimap.AddMarker(__instance.transform, Minimap.MarkerType.ENEMY);
 						}
-						else
+						else if (__instance is AI_NetworkBehaviour_NPC)
 						{
-							if (__instance is AI_NetworkBehaviour_BugSwarm ||
-						__instance is AI_NetworkBehaviour_Chicken ||
-						__instance is AI_NetworkBehaviour_Goat ||
-						__instance is AI_NetworkBehaviour_Llama ||
-						__instance is AI_NetworkBehaviour_Whale ||
-						__instance is AI_NetworkBehaviour_Animal)
-							{
-								Minimap.AddMarker(__instance.transform, Minimap.MarkerType.NEUTRAL);
-							}
+							Minimap.AddMarker(__instance.transform, Minimap.MarkerType.NPC);
+						}
+						else if (__instance is AI_NetworkBehaviour_BugSwarm ||
+							__instance is AI_NetworkBehaviour_Chicken ||
+							__instance is AI_NetworkBehaviour_Goat ||
+							__instance is AI_NetworkBehaviour_Llama ||
+							__instance is AI_NetworkBehaviour_Animal)
+						{
+							Minimap.AddMarker(__instance.transform, Minimap.MarkerType.NEUTRAL);
 						}
 					}
 				}

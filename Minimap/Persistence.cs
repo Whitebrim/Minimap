@@ -16,5 +16,6 @@ namespace Whitebrim.Minimap
 		public bool caveMode = false;
 		public bool markers = true;
 		public int renderingQuality = 3;
+		public float defaultZoom = 15;
 	}
 }

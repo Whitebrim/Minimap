@@ -2,11 +2,11 @@
 	"name": "Minimap",
 	"author": "Whitebrim",
 	"description": "<b><size=120%>For this mod to work properly, you need to install the \"Extra Settings API\" mod.</size></b>\nZoom in/out by <b>+</b>/<b>-</b> keys.\nYou can drag minimap by holding <b>M</b> key.\nYou can find settings in Esc->Settings->Mod tab.",
-	"version": "v1.1.1",
+	"version": "v1.2.0",
 	"license": "GNU AGPLv3",
 	"icon": "icon.png",
 	"banner": "banner.png",
-	"gameVersion": "Update 13+",
+	"gameVersion": "1.0",
 	"requiredByAllPlayers": false,
 	"updateUrl": "https://www.raftmodding.com/api/v1/mods/minimap/version.txt",
 	"isModPermanent": false,
@@ -60,6 +60,14 @@
 			"type": "text",
 			"name": "label3",
 			"text": "Misc:"
+		},
+		{
+			"type": "input",
+			"name": "defaultzoom",
+			"text": "Default Zoom (%)",
+			"default": 15,
+			"max": 5,
+			"mode": "DecimalNumber"
 		},
 		{
 			"type": "slider",
