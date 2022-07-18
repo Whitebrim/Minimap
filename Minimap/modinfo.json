@@ -1,111 +1,108 @@
 {
-	"name": "Minimap",
-	"author": "Whitebrim",
-	"description": "<b><size=120%>For this mod to work properly, you need to install the \"Extra Settings API\" mod.</size></b>\nZoom in/out by <b>+</b>/<b>-</b> keys.\nYou can drag minimap by holding <b>M</b> key.\nYou can find settings in Esc->Settings->Mod tab.",
-	"version": "v1.2.0",
-	"license": "GNU AGPLv3",
-	"icon": "icon.png",
-	"banner": "banner.png",
-	"gameVersion": "1.0",
-	"requiredByAllPlayers": false,
-	"updateUrl": "https://www.raftmodding.com/api/v1/mods/minimap/version.txt",
-	"isModPermanent": false,
-	"excludedFiles": [],
-	"modSettings": [
-		{
-			"type": "text",
-			"name": "label1",
-			"text": "Graphics:"
+    "requiredByAllPlayers" : false ,
+    "isModPermanent" : false ,
+    "excludedFiles" : [] ,
+    "description" : "<b><size=120%>For this mod to work properly, you need to install the \"Extra Settings API\" mod.</size></b>\nZoom in/out by <b>+</b>/<b>-</b> keys.\nYou can drag minimap by holding <b>M</b> key.\nYou can find settings in Esc->Settings->Mod tab." ,
+    "gameVersion" : "1.0" ,
+    "updateUrl" : "https://www.raftmodding.com/api/v1/mods/minimap/version.txt" ,
+	"version" : "v1.2.0" ,
+	"license" : "GNU AGPLv3" ,
+	"banner" : "banner.png" ,
+    "author" : "Whitebrim" ,
+    "icon" : "icon.png" ,
+    "name" : "Minimap" ,
+    
+	"modSettings" : [{
+		"type" : "text" ,
+		"name" : "label1" ,
+		"text" : "Graphics:"
+	},{
+		"type" : "combobox" ,
+		"name" : "renderquality" ,
+		"text" : "Render Quality" ,
+		
+        "default" : "100%" ,
+		"values" : [ "Potato" , "50%" , "75%" , "100%" , "150%" , "200%" ]
+	},{
+		"type" : "combobox" ,
+		"name" : "position" ,
+		"text" : "Minimap Position" ,
+        
+		"default" : "Top Left" ,
+		"values" : [ "Top Left" , "Top right" ]
+	},{
+		"type" : "text" ,
+		"name" : "label2" ,
+		"text" : "Binds:"
+	},{
+		"type" : "keybind" ,
+		"name" : "zoomminimapin" ,
+		"text" : "Mimimap zoom in" ,
+		
+        "mainDefault" : "KeypadPlus" ,
+		"altDefault" : "Equals"
+	},{
+		"type" : "keybind" ,
+		"name" : "zoomminimapout" ,
+		"text" : "Mimimap zoom out" ,
+		"mainDefault" : "KeypadMinus" ,
+		"altDefault" : "Minus"
+	},{
+		"type" : "keybind" ,
+		"name" : "minimapdrag" ,
+		"text" : "Hold to drag minimap" ,
+        
+		"mainDefault" : "M"
+	},{
+		"type" : "text" ,
+		"name" : "label3" ,
+		"text" : "Misc:"
+	},{
+		"type" : "input" ,
+		"name" : "defaultzoom" ,
+		"text" : "Default Zoom (%)" ,
+        "mode" : "DecimalNumber" ,
+		"max" : 5 ,
+        
+        "default" : 15
+	},{
+		"type" : "slider" ,
+		"name" : "nearclip" ,
+		"text" : "Minimap Render Near Clip" ,
+        
+		"range" : {
+			"min" : -100 ,
+			"max" : 200
 		},
-		{
-			"type": "combobox",
-			"name": "renderquality",
-			"text": "Render Quality",
-			"default": "100%",
-			"values": [ "Potato", "50%", "75%", "100%", "150%", "200%" ]
+        
+        "default" : 200
+	},{
+		"type" : "slider" ,
+		"name" : "zoomspeed" ,
+		"text" : "Zoom Speed Multiplier" ,
+		
+        "range" : {
+			"type" : "percent" ,
+			"min" : 0 ,
+			"max" : 5
 		},
-		{
-			"type": "combobox",
-			"name": "position",
-			"text": "Minimap Position",
-			"default": "Top Left",
-			"values": [ "Top Left", "Top right" ]
-		},
-		{
-			"type": "text",
-			"name": "label2",
-			"text": "Binds:"
-		},
-		{
-			"type": "keybind",
-			"name": "zoomminimapin",
-			"text": "Mimimap zoom in",
-			"mainDefault": "KeypadPlus",
-			"altDefault": "Equals"
-		},
-		{
-			"type": "keybind",
-			"name": "zoomminimapout",
-			"text": "Mimimap zoom out",
-			"mainDefault": "KeypadMinus",
-			"altDefault": "Minus"
-		},
-		{
-			"type": "keybind",
-			"name": "minimapdrag",
-			"text": "Hold to drag minimap",
-			"mainDefault": "M"
-		},
-		{
-			"type": "text",
-			"name": "label3",
-			"text": "Misc:"
-		},
-		{
-			"type": "input",
-			"name": "defaultzoom",
-			"text": "Default Zoom (%)",
-			"default": 15,
-			"max": 5,
-			"mode": "DecimalNumber"
-		},
-		{
-			"type": "slider",
-			"name": "nearclip",
-			"text": "Minimap Render Near Clip",
-			"default": 200,
-			"range": {
-				"min": -100,
-				"max": 200
-			}
-		},
-		{
-			"type": "slider",
-			"name": "zoomspeed",
-			"text": "Zoom Speed Multiplier",
-			"default": 1,
-			"range": {
-				"type": "percent",
-				"min": 0,
-				"max": 5
-			}
-		},
-		{
-			"type": "checkbox",
-			"name": "markers",
-			"text": "Enable Minimap Markers",
-			"default": true
-		},
-		{
-			"type": "checkbox",
-			"name": "cavemode",
-			"text": "Cave Mode (Auto set near clip for closed spaces)",
-			"default": false
-		},
-		{
-			"type": "button",
-			"name": "default",
-			"text": "Default"
-		}
-	]
+        
+        "default" : 1 
+	},{
+		"type" : "checkbox" ,
+		"name" : "markers" ,
+		"text" : "Enable Minimap Markers" ,
+        
+        "default" : true
+	},{
+		"type" : "checkbox" ,
+		"name" : "cavemode" ,
+		"text" : "Cave Mode (Auto set near clip for closed spaces)" ,
+        
+        "default" : false
+	},{
+		"type" : "button" ,
+		"name" : "default" ,
+		"text" : "Default"
+	}]
 }
