@@ -3,7 +3,8 @@
 
 ![Banner]
 
-[![Badge License]][License]
+[![Badge License]][License]   
+[![Badge Requires]][Extra Settings API]
 
 <br>
 <br>
@@ -137,6 +138,7 @@
 <!----------------------------------------------------------------------------->
 
 [Better Steering Wheel]: https://www.raftmodding.com/mods/better-steering-wheel
+[Extra Settings API]: https://www.raftmodding.com/mods/extra-settings-api
 [Leaves As Compost]: https://www.raftmodding.com/mods/leaves-as-compost
 [RaftModding]: https://www.raftmodding.com/mods/minimap
 [Telegram]: https://tg.brim.ml/
@@ -149,6 +151,7 @@
 
 <!----------------------------------[ Badges ]--------------------------------->
 
+[Badge Requires]: https://img.shields.io/badge/Requires-Extra_Settings_API-bf234b.svg?style=for-the-badge&labelColor=EF2D5E
 [Badge License]: https://img.shields.io/badge/License-AGPL3-015d93.svg?style=for-the-badge&labelColor=blue
 
 [Badge Neutral]: https://img.shields.io/badge/Domestic_Animals_+_Bees-E0A918?style=for-the-badge&logoColor=white&logo=GoogleMaps
