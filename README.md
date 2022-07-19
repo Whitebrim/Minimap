@@ -33,6 +33,7 @@
 
 <br>
 <br>
+<br>
 
 ## Features
 
@@ -40,6 +41,8 @@
 
 -   Drag the minimap by pressing <br>
     <kbd>  M  </kbd>  and moving your mouse.
+
+<br>
 
 ### Adjustable
 
@@ -63,6 +66,8 @@
 -   Zoom Speed
 
     ` 0% ➞ 500% `
+
+<br>
 
 ### Togglable
 
