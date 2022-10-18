@@ -165,5 +165,5 @@
 
 [Button RaftModding]: https://img.shields.io/badge/RaftModding-3498db?style=for-the-badge&logoColor=white&logo=Wireshark
 [Button Telegram]: https://img.shields.io/badge/Telegram-26A5E4?style=for-the-badge&logoColor=white&logo=Telegram
-[Button Discord]: https://img.shields.io/badge/-Whitebrim%234444-5865F2?style=for-the-badge&logoColor=white&logo=Discord
+[Button Discord]: https://img.shields.io/badge/-Whitebrim%232896-5865F2?style=for-the-badge&logoColor=white&logo=Discord
 [Button Vk]: https://img.shields.io/badge/Vk-0077FF?style=for-the-badge&logoColor=white&logo=VK
