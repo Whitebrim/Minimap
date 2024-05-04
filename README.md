@@ -141,10 +141,10 @@
 [Extra Settings API]: https://www.raftmodding.com/mods/extra-settings-api
 [Leaves As Compost]: https://www.raftmodding.com/mods/leaves-as-compost
 [RaftModding]: https://www.raftmodding.com/mods/minimap
-[Telegram]: https://tg.brim.ml/
+[Telegram]: https://tg.brim.su/
 [Banner]: Minimap/banner.png
 [Raft]: https://raft-game.com/
-[Vk]: https://vk.brim.ml/
+[Vk]: https://vk.brim.su/
 
 [License]: LICENSE
 
@@ -165,5 +165,5 @@
 
 [Button RaftModding]: https://img.shields.io/badge/RaftModding-3498db?style=for-the-badge&logoColor=white&logo=Wireshark
 [Button Telegram]: https://img.shields.io/badge/Telegram-26A5E4?style=for-the-badge&logoColor=white&logo=Telegram
-[Button Discord]: https://img.shields.io/badge/-Whitebrim%232896-5865F2?style=for-the-badge&logoColor=white&logo=Discord
+[Button Discord]: https://img.shields.io/badge/%40brim__-5865F3?style=for-the-badge&logoColor=white&logo=Discord
 [Button Vk]: https://img.shields.io/badge/Vk-0077FF?style=for-the-badge&logoColor=white&logo=VK
