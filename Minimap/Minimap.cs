@@ -6,7 +6,6 @@ using System.Reflection;
 using TMPro;
 using UltimateWater;
 using UnityEngine;
-using UnityEngine.AzureSky;
 using UnityEngine.UI;
 
 namespace Whitebrim.Minimap
@@ -99,10 +98,18 @@ namespace Whitebrim.Minimap
 			var cameraPrefab = asset.LoadAsset<GameObject>("Minimap Camera");
 			camera = Instantiate(cameraPrefab, RAPI.GetLocalPlayer().transform).GetComponent<Camera>();
 			cameraPrefab.GetComponent<Camera>().targetTexture = null;
-			var waterCamera = CopyComponent(Camera.main.GetComponent<WaterCamera>(), camera.gameObject);
-			waterCamera.ReflectionCamera = null;
-			camera.gameObject.AddComponent<AzureSkyFogScattering>();
-			CopyComponent(Camera.main.GetComponent<WaterCameraIME>(), camera.gameObject);
+			// Water setup: WaterCamera as Effect type — runs RenderWaterEffects() + RenderWaterDirect()
+			// but skips global shader state (SetPlaneProjectorMatrix, ToggleEffects, SetLocalMapCoordinates)
+			var mainWaterCamera = Camera.main.GetComponent<WaterCamera>();
+			var waterCamera = camera.gameObject.AddComponent<WaterCamera>();
+			waterCamera.enabled = false; // OnDisable removes from _EnabledWaterCameras while Type is still Normal
+			waterCamera.Type = WaterCamera.CameraType.Effect;
+			waterCamera.GeometryType = mainWaterCamera.GeometryType;
+			Traverse.Create(waterCamera).Field("_RenderMode").SetValue(WaterRenderMode.DefaultQueue);
+			var waterIME = camera.GetComponent<WaterCameraIME>();
+			if (waterIME != null) waterIME.enabled = false;
+			waterCamera.enabled = true; // Re-enable: Effect type is NOT added to _EnabledWaterCameras
+			camera.gameObject.AddComponent<MinimapWaterRenderer>();
 			camera.gameObject.AddComponent<MinimapCameraMover>();
 			var canvasPrefab = asset.LoadAsset<GameObject>("_MinimapCanvas");
 			canvas = Instantiate(canvasPrefab, GameObject.Find("Canvases").transform);
