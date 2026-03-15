@@ -7,6 +7,7 @@ using TMPro;
 using UltimateWater;
 using UnityEngine;
 using UnityEngine.AzureSky;
+using UnityEngine.UI;
 
 namespace Whitebrim.Minimap
 {
@@ -54,6 +55,10 @@ namespace Whitebrim.Minimap
 		private List<GameObject> markers = new List<GameObject>();
 
 		private bool allowedToDrag = false;
+		public bool isFullMapView = false;
+		private GameObject fullMapOverlay;
+		private static readonly float[] QualityMultipliers = { 0.25f, 0.5f, 0.75f, 1.0f, 1.5f, 2.0f };
+
 		private bool markersLastValue;
 		private bool loaded = false;
 
@@ -194,15 +199,21 @@ namespace Whitebrim.Minimap
 				}
 				if (persistence.minimapDrag != null && MyInput.GetButtonDown(persistence.minimapDrag))
 				{
-					InitMinimapDrag(true);
+					if (isFullMapView)
+						ExitFullMapView();
+					else
+						EnterFullMapView();
 				}
-				if (persistence.minimapDrag != null && MyInput.GetButton(persistence.minimapDrag))
+				if (isFullMapView)
 				{
 					OnMinimapDrag();
-				}
-				if (persistence.minimapDrag != null && MyInput.GetButtonUp(persistence.minimapDrag))
-				{
-					InitMinimapDrag(false);
+
+					// Scroll wheel zoom in full map view
+					float scroll = Input.mouseScrollDelta.y;
+					if (scroll > 0)
+						ZoomMinimapIn(5);
+					else if (scroll < 0)
+						ZoomMinimapOut(5);
 				}
 				if (persistence.caveMode && camera != null)
 				{
@@ -219,11 +230,20 @@ namespace Whitebrim.Minimap
 
 		public void OnModUnload()
 		{
+			if (isFullMapView)
+			{
+				ExitFullMapView();
+			}
 			harmonyInstance.UnpatchAll("com.whitebrim.minimap");
 			if (camera != null)
 			{
 				camera.targetTexture = null;
 				Destroy(camera.gameObject);
+			}
+			if (fullMapOverlay != null)
+			{
+				Destroy(fullMapOverlay);
+				fullMapOverlay = null;
 			}
 			if (canvas != null)
 			{
@@ -254,20 +274,20 @@ namespace Whitebrim.Minimap
 		}
 
 		[ConsoleCommand(name: "zoomminimapin", docs: "Zoom minimap in")]
-		public static void ZoomMinimapIn()
+		public static void ZoomMinimapIn(float multiplier = 1.0f)
 		{
 			if (RAPI.IsCurrentSceneGame())
 			{
-				ChangeZoom(Mathf.Max(1, Instance.camera.orthographicSize - ZoomFunction(Instance.camera.orthographicSize)));
+				ChangeZoom(Mathf.Max(1, Instance.camera.orthographicSize - ZoomFunction(Instance.camera.orthographicSize) * multiplier));
 			}
 		}
 
 		[ConsoleCommand(name: "zoomminimapout", docs: "Zoom minimap out")]
-		public static void ZoomMinimapOut()
+		public static void ZoomMinimapOut(float multiplier = 1.0f)
 		{
 			if (RAPI.IsCurrentSceneGame())
 			{
-				ChangeZoom(Instance.camera.orthographicSize + ZoomFunction(Instance.camera.orthographicSize));
+				ChangeZoom(Instance.camera.orthographicSize + ZoomFunction(Instance.camera.orthographicSize) * multiplier);
 			}
 		}
 
@@ -412,15 +432,77 @@ namespace Whitebrim.Minimap
 			}
 		}
 
-		private void InitMinimapDrag(bool drag)
+		private void EnterFullMapView()
 		{
+			if (!RAPI.IsCurrentSceneGame()) return;
+			isFullMapView = true;
+			allowedToDrag = true;
+			
+			var player = RAPI.GetLocalPlayer();
+			player.PlayerScript.SetMouseLookScripts(false);
+			camera.GetComponent<MinimapCameraMover>().active = false;
+			canvas.transform.FindChildRecursively("Player").gameObject.SetActive(false);
+
+			// Hide minimap canvas
+			canvas.SetActive(false);
+
+			// Resize render texture to native resolution * quality multiplier
+			float multiplier = QualityMultipliers[persistence.renderingQuality];
+			int width = Mathf.Max(1, (int)(Screen.width * multiplier));
+			int height = Mathf.Max(1, (int)(Screen.height * multiplier));
+			var targetTexture = camera.targetTexture;
+			camera.targetTexture = null;
+			targetTexture.Release();
+			targetTexture.width = width;
+			targetTexture.height = height;
+			targetTexture.Create();
+			camera.targetTexture = targetTexture;
+			camera.ResetAspect();
+
+			// Create full-screen overlay detached from minimap hierarchy
+			fullMapOverlay = new GameObject("FullMapOverlay");
+			var overlayCanvas = fullMapOverlay.AddComponent<Canvas>();
+			overlayCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
+			overlayCanvas.sortingOrder = 100;
+
+			var rawImageObj = new GameObject("FullMapImage");
+			rawImageObj.transform.SetParent(fullMapOverlay.transform, false);
+			var rawImage = rawImageObj.AddComponent<RawImage>();
+			rawImage.texture = camera.targetTexture;
+
+			var rectTransform = rawImageObj.GetComponent<RectTransform>();
+			rectTransform.anchorMin = Vector2.zero;
+			rectTransform.anchorMax = Vector2.one;
+			rectTransform.offsetMin = Vector2.zero;
+			rectTransform.offsetMax = Vector2.zero;
+		}
+
+		private void ExitFullMapView()
+		{
+			isFullMapView = false;
+			allowedToDrag = false;
+
 			if (RAPI.IsCurrentSceneGame())
 			{
-				RAPI.GetLocalPlayer().PlayerScript.SetMouseLookScripts(!drag);
-				camera.GetComponent<MinimapCameraMover>().active = !drag;
-				canvas.transform.FindChildRecursively("Player").gameObject.SetActive(!drag);
-				allowedToDrag = drag;
+				var player = RAPI.GetLocalPlayer();
+				player.PlayerScript.SetMouseLookScripts(true);
+				camera.GetComponent<MinimapCameraMover>().active = true;
+				canvas.transform.FindChildRecursively("Player").gameObject.SetActive(true);
 			}
+
+			// Destroy full-screen overlay
+			if (fullMapOverlay != null)
+			{
+				Destroy(fullMapOverlay);
+				fullMapOverlay = null;
+			}
+
+			// Show minimap canvas
+			canvas.SetActive(true);
+
+			// Restore render texture to minimap quality
+			UpdateRenderSettings();
+			camera.ResetAspect();
 		}
 
 		private void OnMinimapDrag()
