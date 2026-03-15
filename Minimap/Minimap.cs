@@ -96,9 +96,7 @@ namespace Whitebrim.Minimap
 			cameraPrefab.GetComponent<Camera>().targetTexture = null;
 			var waterCamera = CopyComponent(Camera.main.GetComponent<WaterCamera>(), camera.gameObject);
 			waterCamera.ReflectionCamera = null;
-            var fogScattering = Camera.main.GetComponent<AzureSkyFogScattering>();
-            if (fogScattering != null)
-                CopyComponent(fogScattering, camera.gameObject);
+			camera.gameObject.AddComponent<AzureSkyFogScattering>();
 			CopyComponent(Camera.main.GetComponent<WaterCameraIME>(), camera.gameObject);
 			camera.gameObject.AddComponent<MinimapCameraMover>();
 			var canvasPrefab = asset.LoadAsset<GameObject>("_MinimapCanvas");
