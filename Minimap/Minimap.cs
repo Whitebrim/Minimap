@@ -6,6 +6,7 @@ using System.Reflection;
 using TMPro;
 using UltimateWater;
 using UnityEngine;
+using UnityEngine.AzureSky;
 
 namespace Whitebrim.Minimap
 {
@@ -95,6 +96,9 @@ namespace Whitebrim.Minimap
 			cameraPrefab.GetComponent<Camera>().targetTexture = null;
 			var waterCamera = CopyComponent(Camera.main.GetComponent<WaterCamera>(), camera.gameObject);
 			waterCamera.ReflectionCamera = null;
+            var fogScattering = Camera.main.GetComponent<AzureSkyFogScattering>();
+            if (fogScattering != null)
+                CopyComponent(fogScattering, camera.gameObject);
 			CopyComponent(Camera.main.GetComponent<WaterCameraIME>(), camera.gameObject);
 			camera.gameObject.AddComponent<MinimapCameraMover>();
 			var canvasPrefab = asset.LoadAsset<GameObject>("_MinimapCanvas");
@@ -142,6 +146,7 @@ namespace Whitebrim.Minimap
 			ExtraSettings.SetCheckboxState("markers", persistence.markers);
 			ExtraSettings.SetCheckboxState("cavemode", persistence.caveMode);
 			ExtraSettings.SetInputValue("defaultzoom", persistence.defaultZoom.ToString());
+            ExtraSettings.SetSliderValue("minimapsize", persistence.minimapSize);
 		}
 
 		public void ExtraSettingsAPI_SettingsClose()
@@ -152,6 +157,7 @@ namespace Whitebrim.Minimap
 			{
 				UpdateRenderSettings();
 				UpdateMinimapPosition();
+                UpdateMinimapSize();
 				UpdateCameraNearClip();
 				UpdateCaveMode();
 				UpdateMarkers();
@@ -292,6 +298,7 @@ namespace Whitebrim.Minimap
 			persistence.caveMode = ExtraSettings.GetCheckboxState("cavemode");
 			persistence.renderingQuality = ExtraSettings.GetComboboxSelectedIndex("renderquality");
 			persistence.defaultZoom = Mathf.Max(1, float.Parse(ExtraSettings.GetInputValue("defaultzoom") is null ? "15" : ExtraSettings.GetInputValue("defaultzoom")));
+            persistence.minimapSize = ExtraSettings.GetSliderValue("minimapsize");
 		}
 
 		private static void ChangeZoom(float newZoom)
@@ -354,6 +361,15 @@ namespace Whitebrim.Minimap
 			}
 		}
 
+        private void UpdateMinimapSize()
+        {
+            if (canvas != null && ExtraSettingsAPI_Loaded)
+            {
+                var rectTransform = canvas.transform.GetChild(0) as RectTransform;
+                rectTransform.localScale = Vector3.one * persistence.minimapSize;
+            }
+        }
+        
 		private void UpdateCaveMode()
 		{
 			if (camera != null && ExtraSettingsAPI_Loaded)
@@ -528,6 +544,7 @@ namespace Whitebrim.Minimap
 				yield return new WaitForEndOfFrame();
 			}
 			UpdateMinimapPosition();
+            UpdateMinimapSize();
 			UpdateCameraNearClip();
 			UpdateRenderSettings();
 			UpdateCaveMode();
@@ -541,6 +558,7 @@ namespace Whitebrim.Minimap
 			yield return StartCoroutine(InstantiateAssets());
 			UpdateRenderSettings();
 			UpdateMinimapPosition();
+            UpdateMinimapSize();
 			UpdateCameraNearClip();
 			UpdateCaveMode();
 			ChangeZoom(persistence.defaultZoom);

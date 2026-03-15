@@ -17,5 +17,6 @@ namespace Whitebrim.Minimap
 		public bool markers = true;
 		public int renderingQuality = 3;
 		public float defaultZoom = 15;
+		public float minimapSize = 1f;
 	}
 }
